@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Prashanth Gadipelli | Cybersecurity Console</title>
+      <script src="https://cdn.tailwindcss.com"></script>
+      <link
+         href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&display=swap"
+         rel="stylesheet"
+      />
+      <link
+         rel="stylesheet"
+         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+         xintegrity="sha512-Fo3rlrZj/k7ujm9Xz2pL7WcT4t+e9T2z8rPzE5k5a1C1WzX8o+F2W4PjA8B1j/e5FzX5q3q3P4K8p/S4t6vYQ=="
+         crossorigin="anonymous"
+         referrerpolicy="no-referrer"
+      />
+      <style>
+         :root {
+            --terminal-bg: #0d1117;
+            --terminal-green: #00ff41;
+            --terminal-cyan: #00e0ff;
+            --terminal-red: #ff3366;
+            --terminal-yellow: #fff700;
+            --terminal-purple: #ae52d4;
+            --terminal-white: #ffffff;
+            --terminal-gray: #778899;
+            --card-border: #30363d;
+            --card-bg: #161b22;
+         }
+
+         html,
+         body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow-y: auto;
+            font-family: "JetBrains Mono", monospace;
+            background: var(--terminal-bg);
+            color: var(--terminal-white);
+            line-height: 1.6;
+            transition: opacity 1s ease-in-out;
+         }
+
+         body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+         }
+
+         /* Preloader */
+         .preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: var(--terminal-bg);
+            z-index: 9999;
+            opacity: 1;
+            transition: opacity 1s ease-in-out;
+         }
+
+         .preloader.fade-out {
+            opacity: 0;
+            pointer-events: none;
+         }
+
+         .preloader h1 {
+            color: var(--terminal-green);
+            font-size: 2.5rem;
+            white-space: nowrap;
+            overflow: hidden;
+            width: fit-content;
+            border-right: 2px solid var(--terminal-green);
+            animation: cursor-fade 1s step-end infinite;
+         }
+
+         /* Updated keyframes for a softer fade instead of a blink */
+         @keyframes cursor-fade {
+            50% {
+               border-color: transparent;
+            }
+         }
+
+         /* Matrix Background */
+         .matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.05; /* More subtle */
+         }
+
+         .matrix-char {
+            position: absolute;
+            font-family: "JetBrains Mono", monospace;
+            color: var(--terminal-gray); /* Subtle gray */
+            font-size: 14px;
+            opacity: 0.1;
+            animation: matrixDrop linear infinite;
+         }
+
+         @keyframes matrixDrop {
+            0% {
+               top: -50px;
+               opacity: 0;
+            }
+            10% {
+               opacity: 0.3;
+            }
+            100% {
+               top: 100vh;
+               opacity: 0;
+            }
+         }
+
+         /* Terminal Frame */
+         .terminal-container {
+            max-width: 1200px;
+            width: 95%;
+            margin: 2rem auto;
+            border: 2px solid var(--terminal-green);
+            border-radius: 8px;
+            background: rgba(10, 14, 15, 0.85);
+            box-shadow: 0 0 50px rgba(0, 255, 65, 0.2);
+            backdrop-filter: blur(10px);
+            position: relative;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+         }
+
+         .terminal-header {
+            background: rgba(74, 85, 104, 0.5);
+            padding: 10px 20px;
+            border-bottom: 2px solid var(--terminal-green);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+         }
+
+         .terminal-buttons {
+            display: flex;
+            gap: 8px;
+         }
+
+         .terminal-button {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+         }
+
+         .btn-close {
+            background: var(--terminal-red);
+         }
+         .btn-minimize {
+            background: var(--terminal-yellow);
+         }
+         .btn-maximize {
+            background: var(--terminal-green);
+         }
+
+         .terminal-title {
+            color: var(--terminal-white);
+            font-weight: 400;
+            margin-left: 15px;
+         }
+
+         /* Console Content */
+         .console-output {
+            padding: 20px;
+            flex-grow: 1;
+            overflow-y: auto;
+         }
+
+         /* Prompt and Cursor */
+         .prompt-line {
+            display: flex;
+            align-items: center;
+         }
+
+         .prompt {
+            color: var(--terminal-cyan);
+            font-weight: bold;
+         }
+
+         .cursor {
+            width: 10px;
+            height: 1.25rem;
+            background: var(--terminal-green);
+            animation: blink 1s infinite;
+            margin-left: 5px;
+         }
+
+         @keyframes blink {
+            50% {
+               opacity: 0;
+            }
+         }
+
+         .typing-effect {
+            animation: typing-text 2s steps(40, end);
+            overflow: hidden;
+            white-space: nowrap;
+         }
+
+         @keyframes typing-text {
+            from {
+               width: 0;
+            }
+            to {
+               width: 100%;
+            }
+         }
+
+         /* Section Styles */
+         .section-block {
+            margin: 20px 0;
+            opacity: 0;
+            transform: translateY(20px);
+            transition:
+               opacity 0.8s ease-out,
+               transform 0.8s ease-out;
+         }
+         .section-block.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+         }
+
+         .command-header {
+            color: var(--terminal-green);
+            font-size: 1.125rem;
+            margin-bottom: 15px;
+         }
+
+         .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-left: 4px solid var(--terminal-cyan);
+            border-radius: 6px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+         }
+
+         .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0, 224, 255, 0.1);
+         }
+
+         .logo-container {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 1rem;
+         }
+         .logo-container img {
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            margin-right: 10px;
+         }
+
+         /* Code-like formatting */
+         .code-block {
+            background: #1e293b;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+         }
+         .code-keyword {
+            color: var(--terminal-purple);
+         }
+         .code-string {
+            color: var(--terminal-red);
+         }
+         .code-comment {
+            color: var(--terminal-gray);
+         }
+         .code-function {
+            color: var(--terminal-cyan);
+         }
+         .code-number {
+            color: var(--terminal-red);
+         }
+
+         .contact-links a {
+            color: var(--terminal-cyan);
+            text-decoration: none;
+            transition: color 0.3s;
+         }
+
+         .contact-links a:hover {
+            color: var(--terminal-green);
+         }
+
+         /* Copyright */
+         .copyright {
+            color: var(--terminal-gray);
+            font-size: 0.875rem;
+            margin-top: 1rem;
+            text-align: center;
+            opacity: 0.7;
+         }
+      </style>
+   </head>
+   <body>
+      <div class="preloader" id="preloader">
+         <h1 id="typing-text"></h1>
+      </div>
+
+      <canvas class="matrix-bg" id="matrixBg"></canvas>
+
+      <div class="terminal-container">
+         <div class="terminal-header">
+            <div class="terminal-buttons">
+               <div class="terminal-button btn-close"></div>
+               <div class="terminal-button btn-minimize"></div>
+               <div class="terminal-button btn-maximize"></div>
+            </div>
+            <div class="terminal-title">root@prashanth:~/cybersec_arsenal</div>
+         </div>
+
+         <div class="console-output" id="console-output">
+            </div>
+      </div>
+
+      <div class="copyright">
+         <p>
+            &copy; <span id="currentYear"></span> Prashanth Gadipelli. All
+            Rights Reserved.
+         </p>
+      </div>
+
+      <script>
+         const consoleOutput = document.getElementById("console-output");
+         const matrixCanvas = document.getElementById("matrixBg");
+         const matrixCtx = matrixCanvas.getContext("2d");
+         let width, height;
+
+         // Matrix Background Effect
+         const matrix = "01"; // Only 0s and 1s
+         const characters = matrix.split("");
+         const font_size = 14;
+         let columns;
+         let drops = [];
+
+         function setMatrixSize() {
+            width = matrixCanvas.width = window.innerWidth;
+            height = matrixCanvas.height = window.innerHeight;
+            columns = Math.floor(width / font_size);
+            drops = [];
+            for (let i = 0; i < columns; i++) {
+               drops[i] = 1;
+            }
+         }
+         setMatrixSize();
+         window.addEventListener("resize", setMatrixSize);
+
+         function drawMatrix() {
+            matrixCtx.fillStyle = "rgba(13, 17, 23, 0.05)";
+            matrixCtx.fillRect(0, 0, width, height);
+            matrixCtx.fillStyle = "#778899"; // Subtle gray
+            matrixCtx.font = `${font_size}px JetBrains Mono`;
+            for (let i = 0; i < drops.length; i++) {
+               const text =
+                  characters[Math.floor(Math.random() * characters.length)];
+               matrixCtx.fillText(text, i * font_size, drops[i] * font_size);
+               if (drops[i] * font_size > height && Math.random() > 0.975) {
+                  drops[i] = 0;
+               }
+               drops[i]++;
+            }
+         }
+         setInterval(drawMatrix, 50);
+         
+         // Function to generate and update the live timestamp
+         function updateTimestamp() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, "0");
+            const day = String(now.getDate()).padStart(2, "0");
+            const hours = String(now.getHours()).padStart(2, "0");
+            const minutes = String(now.getMinutes()).padStart(2, "0");
+            const seconds = String(now.getSeconds()).padStart(2, "0");
+
+            const timestamp = `${year}.${month}.${day}_${hours}:${minutes}:${seconds}`;
+            
+            // Update the element with the live timestamp
+            const timestampElement = document.getElementById("systemLogTimestamp");
+            if (timestampElement) {
+               timestampElement.textContent = timestamp;
+            }
+            
+            // This is just a helper for the welcome message, not a primary element
+            return timestamp;
+         }
+
+         const commands = {
+            help: {
+               output: `
+                <div class="mt-4">
+                    <p class="text-white font-bold">Available Commands:</p>
+                    <ul class="list-disc list-inside mt-2">
+                        <li class="text-white"><span class="text-cyan-400">whoami</span> - Display core system profile.</li>
+                        <li class="text-white"><span class="text-cyan-400">ls -l /projects</span> - List all executed tactical missions.</li>
+                        <li class="text-white"><span class="text-cyan-400">cat /var/log/experience</span> - View professional mission logs.</li>
+                        <li class="text-white"><span class="text-cyan-400">ls -a /skills</span> - Reveal the full technical arsenal.</li>
+                        <li class="text-white"><span class="text-cyan-400">contact</span> - Initiate secure channel.</li>
+                        <li class="text-white"><span class="text-cyan-400">clear</span> - Clear the terminal screen.</li>
+                    </ul>
+                </div>
+                `,
+            },
+            whoami: {
+               output: `
+                <div class=" mt-4">
+                    <div class="command-header">./run_system_profile.sh</div>
+                    <div class="card">
+                        <div class="code-block">
+                            <p class="code-comment">// Core Profile Data</p>
+                            <p class="code-keyword">const</p> <span class="code-function">userProfile</span> = {
+                            <p class="ml-4">name: <span class="code-string">"Prashanth Gadipelli"</span>,</p>
+                            <p class="ml-4">role: <span class="code-string">"Penetration Tester | Cybersecurity | Security Analyst | Offensive Security Enthusiast"</span>,</p>
+                            <p class="ml-4">status/availability: <span class="code-string">"Open to Relocation"</span>,</p>
+                            <p class="ml-4">competitive: <span class="code-string">"Active CTF Player"</span>,</p>
+                            };
+                        </div>
+                    </div>
+                </div>
+                `,
+            },
+            "ls -l /projects": {
+               output: `
+                <div class=" mt-4">
+                    <div class="command-header">./decrypt_data_stream.sh /projects</div>
+                    <div class="space-y-4 mt-4">
+
+                        <div class="card">
+                            <h3 class="text-lg font-bold text-cyan-400">Exploit Analysis</h3>
+                            <p class="text-sm text-gray-400">Apr 2025 - May 2025 | Status: <span class="text-green-400 font-bold">COMPLETED</span></p>
+                            <ul class="list-disc list-inside mt-2 text-sm text-white">
+                                <li>Analyzed and exploited C programs with buffer overflow and format string vulnerabilities.</li>
+                                <li>Explored advanced exploitation techniques to bypass security mechanisms such as ASLR and Stack Canaries.</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="card">
+                            <h3 class="text-lg font-bold text-cyan-400">Penetration Testing</h3>
+                            <p class="text-sm text-gray-400">Nov 2024 - Dec 2024 | Status: <span class="text-green-400 font-bold">COMPLETED</span></p>
+                            <ul class="list-disc list-inside mt-2 text-sm text-white">
+                                <li>Executed full-scale offensive op on Windows/Linux using Metasploit, Nmap, and Hashcat.</li>
+                                <li>Authored reports with CVSS-based risk scores, aligned to NIST 800-53 and OWASP Top 10.</li>
+                            </ul>
+                        </div>
+
+                        <div class="card">
+                            <h3 class="text-lg font-bold text-cyan-400">Advanced Incident Response & Digital Forensics</h3>
+                            <p class="text-sm text-gray-400">Nov 2024 - Dec 2024 | Status: <span class="text-green-400 font-bold">COMPLETED</span></p>
+                            <ul class="list-disc list-inside mt-2 text-sm text-white">
+                                <li>Conducted forensic analysis of malware using Autopsy and FTK Imager.</li>
+                                <li>Uncovered critical insights into malware communication methods using Wireshark and Base64.</li>
+                            </ul>
+                        </div>
+
+                        <div class="card">
+                            <h3 class="text-lg font-bold text-cyan-400">Wireshark Analysis</h3>
+                            <p class="text-sm text-gray-400">Apr 2024 - May 2024 | Status: <span class="text-green-400 font-bold">COMPLETED</span></p>
+                            <ul class="list-disc list-inside mt-2 text-sm text-white">
+                                <li>Conducted log analysis to identify unauthorized access attempts related to Cisco IOS XE vulnerabilities using known malicious IPs and usernames.</li>
+                                <li>Investigated indicators of compromise and access patterns tied to exploitation of the Web UI feature in Cisco IOS XE software.</li>
+                            </ul>
+                        </div>
+
+                        <div class="card">
+                            <h3 class="text-lg font-bold text-cyan-400">SECURITY TOOLS PROJECT</h3>
+                            <p class="text-sm text-gray-400">Mar 2024 - Apr 2024 | Status: <span class="text-green-400 font-bold">COMPLETED</span></p>
+                            <ul class="list-disc list-inside mt-2 text-sm text-white">
+                                <li>Applied ethical hacking techniques (Nmap, SQL injection, password cracking, privilege escalation) to uncover and validate over 15 security vulnerabilities.</li>
+                                <li>Delivered comprehensive security assessments, including detailed vulnerability reports, risk evaluations, and actionable mitigation strategies.</li>
+                            </ul>
+                        </div>
+
+                        <div class="card">
+                            <h3 class="text-lg font-bold text-cyan-400">CMMC 2.0 Level 1 Compliance Assessment</h3>
+                            <p class="text-sm text-gray-400">Feb 2024 - Mar 2024 | Status: <span class="text-green-400 font-bold">COMPLETED</span></p>
+                            <ul class="list-disc list-inside mt-2 text-sm text-white">
+                                <li>Led a team of four to review the company's web application and system settings against CMMC 2.0 Level 1 requirements.</li>
+                                <li>Identified environmental gaps and delivered actionable recommendations, enhancing organizational security posture by 25%.</li>
+                            </ul>
+                        </div>
+
+                        <div class="card">
+                            <h3 class="text-lg font-bold text-cyan-400">Securing a Cloud-Based (AWS) Healthcare Application</h3>
+                            <p class="text-sm text-gray-400">Oct 2023 - Dec 2023 | Status: <span class="text-green-400 font-bold">COMPLETED</span></p>
+                            <ul class="list-disc list-inside mt-2 text-sm text-white">
+                                <li>Vulnerability assessment on AWS cloud infra, leading to 90% risk reduction.</li>
+                                <li>Developed disaster recovery plan using AWS Backup and CloudFormation for HIPAA compliance.</li>
+                            </ul>
+                        </div>
+
+                    </div>
+                </div>
+                `,
+            },
+            "cat /var/log/experience": {
+               output: `
+                <div class="mt-4">
+                    <div class="command-header">./initiate_mission_log_access.sh</div>
+                    <div class="space-y-4 mt-4">
+                        
+                        <div class="card">
+                            <div class="logo-container">
+                                <img src="https://upload.wikimedia.org/wikipedia/en/thumb/3/3e/University_of_Maryland_seal.svg/1200px-University_of_Maryland_seal.svg.png" alt="University Logo" onerror="this.src='https://placehold.co/100x100/30363d/fff?text=Org'">
+                                <h3 class="text-lg font-bold text-cyan-400">Graduate Teaching Assistant</h3>
+                            </div>
+                            <p class="text-sm text-gray-400">Jan 2024 - May 2025</p>
+                            <ul class="list-disc list-inside mt-2 text-sm text-white">
+                                <li>Led hands-on labs for 50+ students in threat modeling and social engineering, including phishing simulations with Gophish.</li>
+                                <li>Integrated the MITRE ATT&CK framework to analyze adversary TTPs and link them to enterprise security risks.</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="card">
+                            <div class="logo-container">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/5/55/MAQ_Software_logo.png" alt="Company Logo" onerror="this.src='https://placehold.co/100x100/30363d/fff?text=Org'">
+                                <h3 class="text-lg font-bold text-cyan-400">Security Analyst</h3>
+                            </div>
+                            <p class="text-sm text-gray-400">Nov 2021 - Nov 2022</p>
+                            <ul class="list-disc list-inside mt-2 text-sm text-white">
+                                <li>Engineered automated Power BI dashboards by designing ETL processes for 150+ sources, leveraging Azure DevOps CI/CD.</li>
+                                <li>Conducted system, network, and web vulnerability scanning, reducing the overall threat landscape by 80% and achieving a 95% score on Azure Security Center.</li>
+                            </ul>
+                        </div>
+
+                        <div class="card">
+                            <div class="logo-container">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/5/55/MAQ_Software_logo.png" alt="Company Logo" onerror="this.src='https://placehold.co/100x100/30363d/fff?text=Org'">
+                                <h3 class="text-lg font-bold text-cyan-400">Security Analyst Intern</h3>
+                            </div>
+                            <p class="text-sm text-gray-400">Nov 2020 - Oct 2021</p>
+                            <ul class="list-disc list-inside mt-2 text-sm text-white">
+                                <li>Conducted vulnerability assessments using Nessus, Qualys, and OWASP Top 10, and developed a Python-based scanning tool.</li>
+                                <li>Improved testing efficiency by 25% and resolved 90% of endpoint issues across Windows/Linux, resulting in a 25% gain in system uptime.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                `,
+            },
+            "ls -a /skills": {
+               output: `
+                <div class="mt-4">
+                    <div class="command-header">./display_tactical_arsenal.sh</div>
+                    <div class="space-y-4 mt-4">
+                        <div class="card">
+                            <h3 class="text-lg font-bold text-cyan-400">Tools & Frameworks</h3>
+                            <p class="text-sm text-white mt-2">Nessus, Nmap, Burp Suite, Metasploit, Splunk, MITRE ATT&CK, OWASP Top 10, AWS Security, Microsoft Azure, NIST, Ghidra</p>
+                        </div>
+                        <div class="card">
+                            <h3 class="text-lg font-bold text-cyan-400">Programming & Scripting</h3>
+                            <p class="text-sm text-white mt-2">Python, C++, C, PowerShell, Bash, Shell Scripting</p>
+                        </div>
+                        <div class="card">
+                            <h3 class="text-lg font-bold text-cyan-400">Certifications</h3>
+                            <ul class="list-disc list-inside mt-2 text-sm text-white">
+                                <li class="flex items-center mt-2">
+                                    <div class="logo-container">
+                                        <img src="https://static.wixstatic.com/media/f9d248_9a710c19e62b4884a7b2d20e6fb09b57~mv2.png/v1/fill/w_1480,h_1322,al_c,q_90,usm_0.66_1.00_0.01,enc_avif,quality_auto/f9d248_9a710c19e62b4884a7b2d20e6fb09b57~mv2.png" alt="eJPT Logo" onerror="this.src='https://placehold.co/100x100/30363d/fff?text=Cert'">
+                                        eLearn Security Junior Penetration Tester (eJPT)
+                                    </div>
+                                </li>
+                                <li class="flex items-center mt-2">
+                                    <div class="logo-container">
+                                        <img src="https://cin.comptia.org/media/securityplus-logo-certified-ce-png.8/full" alt="CompTIA Logo" onerror="this.src='https://placehold.co/100x100/30363d/fff?text=Cert'">
+                                        CompTIA Security+ (701)
+                                    </div>
+                                </li>
+                                <li class="flex items-center mt-2">
+                                    <div class="logo-container">
+                                        <img src="https://pranqsterslair.com/lair/uploads/2023/09/OSCP-600x510.png" alt="OSCP Logo" onerror="this.src='https://placehold.co/100x100/30363d/fff?text=Cert'">
+                                        Offensive Security Certified Professional (Pursuing)
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                `,
+            },
+            contact: {
+               output: `
+                <div class=" mt-4">
+                    <div class="command-header">./initiate_secure_channel.sh</div>
+                    <div class="card">
+                        <h3 class="text-lg font-bold text-cyan-400">Contact Protocol Engaged</h3>
+                        <p class="text-sm text-white mt-2">Connecting to secure contact nodes...</p>
+                        <div class="contact-links mt-4">
+                            <p><i class="fas fa-envelope mr-2 text-green-400"></i> Email: <a href="mailto:gprashan@terpmail.umd.edu" class="hover:text-cyan-400 text-white">gprashan@terpmail.umd.edu</a></p>
+                            <p><i class="fab fa-linkedin mr-2 text-green-400"></i> LinkedIn: <a href="https://linkedin.com/in/prashanthgadipelli/" target="_blank" class="hover:text-cyan-400 text-white">linkedin.com/in/prashanthgadipelli/</a></p>
+                            <p><i class="fas fa-phone mr-2 text-green-400"></i> Mobile: <a href="tel:+1 240-481-1357" class="hover:text-cyan-400 text-white">+1 240-481-1357</a></p>
+                        </div>
+                    </div>
+                </div>
+                `,
+            },
+         };
+
+         function addOutput(text) {
+            const outputDiv = document.createElement("div");
+            outputDiv.innerHTML = text;
+            outputDiv.classList.add("section-block");
+            consoleOutput.appendChild(outputDiv);
+            setTimeout(() => {
+               outputDiv.classList.add("is-visible");
+               consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            }, 100);
+         }
+
+         /*
+          * Adds a new prompt line and focuses the input field.
+          */
+         function addPrompt() {
+            const promptLine = document.createElement("div");
+            promptLine.classList.add("prompt-line", "mt-4");
+            promptLine.innerHTML = `<span class="prompt">root@prashanth:~$</span> <input type="text" class="bg-transparent text-white border-none outline-none flex-grow ml-2">`;
+            consoleOutput.appendChild(promptLine);
+
+            const input = promptLine.querySelector("input");
+            input.focus();
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+
+            input.addEventListener("keydown", (e) => {
+               if (e.key === "Enter") {
+                  const command = e.target.value.trim().toLowerCase();
+                  e.target.disabled = true;
+                  e.target.style.color = "var(--terminal-green)";
+                  addCommandOutput(command);
+               }
+            });
+         }
+
+         function addCommandOutput(command) {
+            let outputContent = null;
+            const lowerCommand = command.trim().toLowerCase();
+
+            // Clear command is a special case
+            if (lowerCommand === "clear") {
+               consoleOutput.innerHTML = "";
+               addPrompt();
+               return;
+            }
+
+            // Direct and explicit checks for each command
+            if (lowerCommand === "whoami") {
+               outputContent = commands["whoami"].output;
+            } else if (
+               lowerCommand === "ls" ||
+               lowerCommand === "ls -l" ||
+               lowerCommand === "ls -l /projects"
+            ) {
+               outputContent = commands["ls -l /projects"].output;
+            } else if (
+               lowerCommand === "ls -a" ||
+               lowerCommand === "ls -a /skills"
+            ) {
+               outputContent = commands["ls -a /skills"].output;
+            } else if (
+               lowerCommand === "cat" ||
+               lowerCommand === "cat /var/log/experience"
+            ) {
+               outputContent = commands["cat /var/log/experience"].output;
+            } else if (lowerCommand === "contact") {
+               outputContent = commands["contact"].output;
+            } else if (lowerCommand === "help") {
+               outputContent = commands["help"].output;
+            } else {
+               // This is the default message for any unrecognized command
+               outputContent = `<p class="text-red-400 mt-4">Command not found: ${command}. Type 'help' for a list of commands.</p>`;
+            }
+
+            // Only add output if content is available
+            if (outputContent) {
+               addOutput(outputContent);
+            }
+
+            // Always add a new prompt after a short delay
+            setTimeout(() => {
+               addPrompt();
+            }, 200);
+         }
+
+         // Initial sequence
+         function startConsole() {
+            // Get the initial timestamp
+            const initialTimestamp = updateTimestamp();
+            
+            const welcomeText = `
+                <div class="mt-4">
+                    <p class="text-white">SYSTEM LOG - <span id="systemLogTimestamp">${initialTimestamp}</span></p>
+                    <p><span class="text-green-400">[OK]</span> Initializing core modules...</p>
+                    <p><span class="text-green-400">[OK]</span> Compiling user data...</p>
+                    <p><span class="text-yellow-400">[WARNING]</span> Network latency detected. Bypassing...</p>
+                    <p><span class="text-green-400">[OK]</span> System ready. Access granted.</p>
+                </div>
+            `;
+            addOutput(welcomeText);
+
+            // Start the interval to update the timestamp every second
+            // We use a short delay before starting the interval to ensure the element exists
+            setTimeout(() => {
+                setInterval(updateTimestamp, 1000);
+            }, 500);
+
+
+            setTimeout(() => {
+               const welcomePrompt = document.createElement("div");
+               welcomePrompt.innerHTML = `<span class="prompt">root@prashanth:~$</span> <span class="typing-effect">help</span>`;
+               consoleOutput.appendChild(welcomePrompt);
+
+               setTimeout(() => {
+                  addCommandOutput("help");
+               }, 2000);
+            }, 1000);
+         }
+
+         // The typing function without the mid-text pause logic
+         function typeWriter(element, text, speed, callback) {
+            let i = 0;
+            const timer = setInterval(function () {
+               if (i < text.length) {
+                  element.innerHTML += text.charAt(i);
+                  i++;
+               } else {
+                  clearInterval(timer);
+                  if (callback) {
+                     callback();
+                  }
+               }
+            }, speed);
+         }
+
+         // Preloader Logic
+         function initPreloader() {
+            const preloader = document.getElementById("preloader");
+            const h1Element = document.getElementById("typing-text");
+            const textToType = "Hi, I'm Prashanth Gadipelli";
+            const typingSpeed = 90; // Typing speed in ms
+
+            // Start the typewriter effect and wait for the callback
+            typeWriter(h1Element, textToType, typingSpeed, () => {
+               // This callback runs immediately after typing is complete
+               // A single pause of 0.5 second is implemented here
+               setTimeout(() => {
+                  preloader.classList.add("fade-out");
+                  setTimeout(() => {
+                     preloader.style.display = "none";
+                     startConsole();
+                  }, 500); // Fades out and then loads the console
+               }, 500);
+            });
+         }
+
+         // Set current year for copyright
+         document.getElementById("currentYear").textContent =
+            new Date().getFullYear();
+
+         window.onload = initPreloader;
+      </script>
+   </body>
+</html>
